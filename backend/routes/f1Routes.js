@@ -10,11 +10,12 @@ router.use(auth);
 router.post("/initial-data", f1Controller.insertInitialData);
 
 // Constructors Championship routes
-
 router.get("/constructors/:year", f1Controller.getConstructorsChampionship);
-// Drivers Championship routes
 
+// Drivers Championship routes
 router.get("/drivers/:year", f1Controller.getDriversChampionship);
+
 // Practice Session routes
 router.get("/practice/:year/:round/:session", f1Controller.getPracticeSession);
+
 module.exports = router;
