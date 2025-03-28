@@ -277,6 +277,7 @@ const f1Controller = {
       let practiceResponse = null;
       try {
         const practiceUrl = `${F1_API_BASE_URL}/${season}/1/fp1?limit=10`;
+        console.log(practiceUrl);
         practiceResponse = await fetchWithRetry(practiceUrl);
         console.log(
           "Practice Session API Response:",
