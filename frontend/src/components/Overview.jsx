@@ -1,5 +1,4 @@
-// spotify-dashboard/src/components/Overview.js
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Grid,
@@ -27,22 +26,94 @@ import {
   Bar,
   ResponsiveContainer,
 } from "recharts";
-import { driversData, constructorsData, performanceData } from "../data/f1Data";
-import TeamWinsPieChart from "./TeamWinsPieChart";
-import QualifyingLapChart from "./QualifyingLapChart";
+import axios from "axios";
 import { useTheme } from "@mui/material/styles";
+import QualifyingLapChart from "./QualifyingLapChart";
+import { constructorsData, performanceData } from "../data/f1Data";
+import { useFilter } from "../context/FilterContext";
 
+// Chart Colors
 const COLORS = [
-  "#E10600",
-  "#1E5BC6",
-  "#00D2BE",
-  "#FFF200",
-  "#FF8700",
-  "#469BFF",
+  "#E10600", // Ferrari Red
+  "#1E5BC6", // Williams Blue
+  "#00D2BE", // Mercedes Teal
+  "#FFF200", // Renault Yellow
+  "#FF8700", // McLaren Orange
+  "#469BFF", // Alpine Blue
 ];
 
 const Overview = () => {
   const theme = useTheme();
+  const { season } = useFilter();
+  const [constructorData, setConstructorData] = useState([]);
+  const [topWinsData, setTopWinsData] = useState([]);
+  const [driverData, setDriverData] = useState([]);
+
+  
+  const API_URL = `http://localhost:5000/api/f1/constructors/${season}`;
+  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  const token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
+
+  // Fetch constructor data
+  useEffect(() => {
+    const fetchConstructorData = async () => {
+      try {
+        const response = await axios.get(API_URL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const formattedData = response.data.data.map((item) => ({
+          name: item.teamId.teamName,
+          points: item.points,
+          wins: item.wins,
+        }));
+
+        setConstructorData(formattedData);
+
+        // Get top 5 teams by wins for PieChart
+        const top5WinsData = [...formattedData]
+          .filter((item) => item.wins > 0)
+          .sort((a, b) => b.wins - a.wins)
+          .slice(0, 5)
+          .map((item) => ({
+            name: item.name,
+            value: item.wins,
+          }));
+
+        setTopWinsData(top5WinsData);
+      } catch (error) {
+        console.error("Error fetching constructor data:", error);
+      }
+    };
+
+    const fetchDriverData = async () => {
+      try {
+        const response = await axios.get(Driver_URL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const formattedDriverData = response.data.data.map((item) => ({
+          name: item.driverId.name,
+          surname: item.driverId.surname,
+          nationality: item.driverId.nationality,
+          points: item.points,
+          constructor: item.teamId.teamName,
+        }));
+
+        setDriverData(formattedDriverData);
+      } catch (error) {
+        console.error("Error fetching driver data:", error);
+      }
+    };
+
+    fetchConstructorData();
+    fetchDriverData();
+  }, [season]);
 
   return (
     <Box>
@@ -52,50 +123,35 @@ const Overview = () => {
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <Typography variant="h6">Points</Typography>
-            <Typography variant="h3" color="primary">
-              46.26K
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <Typography variant="h6">Fastest Lap Time</Typography>
-            <Typography variant="h3" color="primary">
-              00:00:55
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <Typography variant="h6">Number of Races</Typography>
-            <Typography variant="h3" color="primary">
-              25.40K
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <Typography variant="h6">Total Wins</Typography>
-            <Typography variant="h3" color="primary">
-              655
-            </Typography>
-          </Paper>
-        </Grid>
+        {[
+          { title: "Points", value: "46.26K" },
+          { title: "Fastest Lap Time", value: "00:00:55" },
+          { title: "Number of Races", value: "25.40K" },
+          { title: "Total Wins", value: "655" },
+        ].map((item, index) => (
+          <Grid item xs={12} md={6} lg={3} key={index}>
+            <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
+              <Typography variant="h6">{item.title}</Typography>
+              <Typography variant="h3" color="primary">
+                {item.value}
+              </Typography>
+            </Paper>
+          </Grid>
+        ))}
       </Grid>
 
-      {/* Charts */}
+      {/* Charts Section */}
       <Grid container spacing={3}>
-        {/* Constructor Points */}
+        {/* Constructor Points BarChart */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6" gutterBottom>
               Constructor Total Points
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={constructorsData}>
+              <BarChart
+                data={constructorData.length ? constructorData : constructorsData}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -125,14 +181,38 @@ const Overview = () => {
           </Paper>
         </Grid>
 
-        {/* Team Wins Pie Chart */}
+        {/* Top 5 Constructor Wins PieChart */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <TeamWinsPieChart />
+            <Typography variant="h6" gutterBottom>
+              Top 5 Constructor Wins
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={topWinsData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, value }) => `${name} (${value})`}
+                >
+                  {topWinsData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </Paper>
         </Grid>
 
-        {/* Driver Performance Trends */}
+        {/* Driver Performance Trends Line Chart */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6" gutterBottom>
@@ -163,7 +243,7 @@ const Overview = () => {
           </Paper>
         </Grid>
 
-        {/* Qualifying Lap Times */}
+        {/* Qualifying Lap Times Chart */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <QualifyingLapChart />
@@ -171,7 +251,7 @@ const Overview = () => {
         </Grid>
       </Grid>
 
-      {/* Drivers Table */}
+      {/* Drivers Standings Table */}
       <Grid container spacing={3} sx={{ mt: 3 }}>
         <Grid item xs={12}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
@@ -190,8 +270,8 @@ const Overview = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {driversData.map((driver) => (
-                    <TableRow key={`${driver.name}-${driver.surname}`}>
+                  {driverData.map((driver, index) => (
+                    <TableRow key={`${driver.name}-${driver.surname}-${index}`}>
                       <TableCell>{driver.name}</TableCell>
                       <TableCell>{driver.surname}</TableCell>
                       <TableCell>{driver.nationality}</TableCell>

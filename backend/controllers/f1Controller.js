@@ -520,6 +520,31 @@ const f1Controller = {
       });
     }
   },
+
+  async getAllDrivers(req, res) {
+    try {
+      console.log("Fetching all drivers from the database...");
+      const drivers = await Driver.find({});
+      if (drivers.length === 0) {
+        return res.status(404).json({
+          status: "error",
+          message: "No driver data found.",
+        });
+      }
+      res.status(200).json({
+        status: "success",
+        data: drivers,
+      });
+    } catch (error) {
+      console.error("Error fetching drivers:", error.message);
+      res.status(500).json({
+        status: "error",
+        message: "Failed to fetch driver details.",
+      });
+    }
+  },
+
+  
 };
 
 module.exports = f1Controller;
