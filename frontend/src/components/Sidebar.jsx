@@ -37,9 +37,9 @@ import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import NewsletterForm from "./NewsletterForm";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://f1-dashboard-k5b8.onrender.com/api/auth";
 
-const Source_URL = "http://localhost:5000/api/f1/";
+const Source_URL = "https://f1-dashboard-k5b8.onrender.com/api/f1/";
 
 const Sidebar = () => {
   const { constructor, setConstructor, season, setSeason } = useFilter();

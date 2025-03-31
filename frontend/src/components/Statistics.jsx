@@ -40,7 +40,7 @@ const Statistics = () => {
   const [driversData, setDriversData] = useState([]);
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  const Driver_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/drivers/${season}`;
   const token =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
 

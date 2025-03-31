@@ -14,7 +14,7 @@ import { Box } from "@mui/material";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://f1-dashboard-k5b8.onrender.com/api/auth";
 
 // Configure axios defaults
 axios.defaults.withCredentials = true; // Enable sending cookies

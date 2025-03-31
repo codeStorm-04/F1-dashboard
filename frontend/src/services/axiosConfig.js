@@ -30,6 +30,6 @@ axios.interceptors.response.use(
 );
 
 // Set default base URL
-axios.defaults.baseURL = "http://localhost:5000";
+axios.defaults.baseURL = "https://f1-dashboard-k5b8.onrender.com";
 
 export default axios; 
