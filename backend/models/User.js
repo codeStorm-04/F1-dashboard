@@ -26,6 +26,24 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    newsletter: {
+      type: Boolean,
+      default: false,
+    },
+    newsletterPreferences: {
+      type: {
+        f1News: { type: Boolean, default: false },
+        raceUpdates: { type: Boolean, default: false },
+        driverUpdates: { type: Boolean, default: false },
+        teamUpdates: { type: Boolean, default: false },
+      },
+      default: {
+        f1News: false,
+        raceUpdates: false,
+        driverUpdates: false,
+        teamUpdates: false,
+      },
+    },
   },
   {
     timestamps: true,

@@ -17,8 +17,8 @@ import {
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
+  // BarChart,
+  // Bar,
   XAxis,
   YAxis,
   CartesianGrid,

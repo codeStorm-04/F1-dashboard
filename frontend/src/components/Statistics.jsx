@@ -24,9 +24,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  // PieChart,
+  // Pie,
+  // Cell,
 } from "recharts";
 import { driversData, constructorsData, performanceData } from "../data/f1Data";
 import QualifyingLapChart from "./QualifyingLapChart";
