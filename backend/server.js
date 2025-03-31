@@ -2,28 +2,47 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const authRoutes = require("./routes/authRoutes");
+const f1Routes = require("./routes/f1Routes");
+const errorHandler = require("./middleware/errorHandler");
 
 // Load environment variables first
 dotenv.config();
 
 const app = express();
 
+// CORS configuration
+const corsOptions = {
+  origin: "http://localhost:3000", // Frontend URL
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Access-Control-Allow-Origin",
+  ],
+  exposedHeaders: ["Content-Type", "Authorization"],
+};
+
 // Middleware
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
 
 // Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  // console.log("Request headers:", req.headers);
   next();
 });
 
-// MongoDB Connection
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/f1", f1Routes);
+
+// Error handling middleware
+app.use(errorHandler);
+
+// Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -31,39 +50,12 @@ mongoose
   })
   .then(() => {
     console.log("Connected to MongoDB");
-    // Start server only after MongoDB connects
-    startServer();
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
   })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
     process.exit(1); // Exit if DB connection fails
   });
-
-// Routes and server startup
-function startServer() {
-  // Verify route modules are loaded
-  let f1Routes, authRoutes, errorHandler;
-  try {
-    f1Routes = require("./routes/f1Routes");
-    authRoutes = require("./routes/authRoutes");
-    errorHandler = require("./middleware/errorHandler");
-  } catch (err) {
-    console.error("Error loading route modules:", err);
-    process.exit(1); // Exit if modules fail to load
-  }
-
-  app.use("/api/auth", authRoutes);
-  app.use("/api/f1", f1Routes);
-
-  // Error handling
-  app.use(errorHandler);
-
-  // Catch-all for undefined routes (debugging 404s)
-  app.use((req, res) => {
-    console.log(`Route not found: ${req.method} ${req.url}`);
-    res.status(404).json({ status: "error", message: "Route not found" });
-  });
-
-  const PORT = process.env.PORT || 5001;
-  app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
-}
