@@ -75,8 +75,12 @@ const auth = async (req, res, next) => {
     const authHeader = req.header("Authorization");
     console.log("Received Authorization header:", authHeader); // Debug
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new Error("No token provided or invalid format");
+    if (!authHeader) {
+      throw new Error("No Authorization header provided");
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+      throw new Error("Invalid token format. Must start with 'Bearer '");
     }
 
     const token = authHeader.replace("Bearer ", "");
@@ -84,16 +88,19 @@ const auth = async (req, res, next) => {
 
     // Check if JWT_SECRET is set
     if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is not defined in environment variables");
+      console.error("JWT_SECRET is not defined in environment variables");
+      throw new Error("Server configuration error");
     }
 
     // Verify token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Token verified successfully");
     } catch (jwtError) {
+      console.error("JWT verification failed:", jwtError);
       if (jwtError.name === "JsonWebTokenError") {
-        throw new Error("Invalid token format or signature");
+        throw new Error("Invalid token signature");
       } else if (jwtError.name === "TokenExpiredError") {
         throw new Error("Token has expired");
       } else {
@@ -105,13 +112,15 @@ const auth = async (req, res, next) => {
 
     // Check for required payload field
     if (!decoded.id) {
-      throw new Error("Invalid token payload: missing 'id' field");
+      console.error("Invalid token payload: missing 'id' field");
+      throw new Error("Invalid token payload");
     }
 
     // Find user
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      throw new Error("User not found for token ID: " + decoded.id);
+      console.error("User not found for token ID:", decoded.id);
+      throw new Error("User not found");
     }
 
     // Attach user and token to request
@@ -124,8 +133,8 @@ const auth = async (req, res, next) => {
     console.error("Authentication error:", error.message); // Log details
     res.status(401).json({
       status: "error",
-      message: "Please authenticate",
-      error: error.message, // Specific error message
+      message: error.message || "Authentication failed",
+      error: error.message,
     });
   }
 };
