@@ -12,9 +12,13 @@ import {
 } from "antd";
 import { Box } from "@mui/material";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+// import { toast, ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 
-const API_URL = "http://localhost:5000/api/auth";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const API_URL = "https://f1-dashboard-k5b8.onrender.com/api/auth";
 
 // Configure axios defaults
 axios.defaults.withCredentials = true; // Enable sending cookies
@@ -363,7 +367,7 @@ const UserAuth = () => {
 
   return (
     <Box sx={{ ml: 2 }}>
-      <Toaster />
+      <ToastContainer />
       <Dropdown
         menu={{
           items,

@@ -13,7 +13,6 @@
 // //   Chip,
 // // } from "@mui/material";
 
-
 // // import { constructorsData, driversData } from "../data/f1Data";
 // // import { useFilter } from "../context/FilterContext";
 
@@ -131,7 +130,6 @@
 
 // // export default Teams;
 
-
 // import React, { useState, useEffect } from "react";
 // import {
 //   Typography,
@@ -242,24 +240,17 @@
 //                   </TableContainer>
 //                 </Paper>
 //               </Grid>
-              
+
 //             );
 //           })}
 //       </Grid>
-          
 
 //     </Box>
 //   );
 
-
-  
-  
 // };
 
 // export default Teams;
-
-
-
 
 import React, { useState, useEffect } from "react";
 import {
@@ -273,7 +264,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
+  // Chip,
 } from "@mui/material";
 import axios from "axios";
 import { useFilter } from "../context/FilterContext";
@@ -282,7 +273,7 @@ const Teams = () => {
   const { season } = useFilter(); // Get season dynamically
   const [driversByConstructor, setDriversByConstructor] = useState({});
   const [teamStats, setTeamStats] = useState({});
-  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  const Driver_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/drivers/${season}`;
   const token =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
 
@@ -441,45 +432,44 @@ const Teams = () => {
         </TableContainer>
       </Paper> */}
       {/* Team Statistics Table */}
-<Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-  <Typography variant="h6" gutterBottom>
-    Team Statistics
-  </Typography>
-  <TableContainer>
-    <Table>
-      <TableHead>
-        <TableRow>
-          <TableCell>Team</TableCell>
-          {/* <TableCell>Nationality</TableCell> */}
-          <TableCell align="right">Total Points</TableCell>
-          <TableCell align="right">Total Wins</TableCell>
-          <TableCell align="right">Current Drivers</TableCell>
-          <TableCell align="right">Points per Win</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {Object.keys(teamStats).map((teamName) => {
-          const team = teamStats[teamName];
-          return (
-            <TableRow key={team.name}>
-              <TableCell>{team.name}</TableCell>
-              {/* <TableCell>{team.nationality}</TableCell> */}
-              <TableCell align="right">
-                {team.points.toLocaleString()}
-              </TableCell>
-              <TableCell align="right">{team.wins}</TableCell>
-              <TableCell align="right">{team.numDrivers}</TableCell>
-              <TableCell align="right">
-                {team.pointsPerWin.toFixed(1)}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
-  </TableContainer>
-</Paper>
-
+      <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
+        <Typography variant="h6" gutterBottom>
+          Team Statistics
+        </Typography>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Team</TableCell>
+                {/* <TableCell>Nationality</TableCell> */}
+                <TableCell align="right">Total Points</TableCell>
+                <TableCell align="right">Total Wins</TableCell>
+                <TableCell align="right">Current Drivers</TableCell>
+                <TableCell align="right">Points per Win</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Object.keys(teamStats).map((teamName) => {
+                const team = teamStats[teamName];
+                return (
+                  <TableRow key={team.name}>
+                    <TableCell>{team.name}</TableCell>
+                    {/* <TableCell>{team.nationality}</TableCell> */}
+                    <TableCell align="right">
+                      {team.points.toLocaleString()}
+                    </TableCell>
+                    <TableCell align="right">{team.wins}</TableCell>
+                    <TableCell align="right">{team.numDrivers}</TableCell>
+                    <TableCell align="right">
+                      {team.pointsPerWin.toFixed(1)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </Box>
   );
 };

@@ -18,11 +18,11 @@
     "leaflet": "^1.9.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-flash-message": "^1.0.8",
     "react-hot-toast": "^2.5.2",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.4.0",
     "react-scripts": "5.0.1",
+    "react-toastify": "^11.0.5",
     "recharts": "^2.15.1",
     "web-vitals": "^2.1.4"
   },

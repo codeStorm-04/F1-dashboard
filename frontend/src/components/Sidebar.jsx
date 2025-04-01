@@ -17,17 +17,17 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  Speed as SpeedIcon,
+  // Speed as SpeedIcon,
   EmojiEvents as TrophyIcon,
   Group as TeamIcon,
   Timeline as StatsIcon,
   Email as EmailIcon,
   Dashboard as DashboardIcon,
   Map as MapIcon,
-  People as PeopleIcon,
-  BarChart as BarChartIcon,
+  // People as PeopleIcon,
+  // BarChart as BarChartIcon,
   Unsubscribe as UnsubscribeIcon,
-  Menu as MenuIcon,
+  // Menu as MenuIcon,
 } from "@mui/icons-material";
 import { Modal, Form, Input, Checkbox, Space, Select, Button } from "antd";
 import { useFilter } from "../context/FilterContext";
@@ -37,9 +37,9 @@ import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import NewsletterForm from "./NewsletterForm";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://f1-dashboard-k5b8.onrender.com/api/auth";
 
-const Source_URL = "http://localhost:5000/api/f1/";
+const Source_URL = "https://f1-dashboard-k5b8.onrender.com/api/f1/";
 
 const Sidebar = () => {
   const { constructor, setConstructor, season, setSeason } = useFilter();
@@ -47,30 +47,28 @@ const Sidebar = () => {
   const location = useLocation();
   const theme = useTheme();
   const [newsletterOpen, setNewsletterOpen] = useState(false);
-  
+
   const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
   const [showNewsletterPreferences, setShowNewsletterPreferences] =
     useState(false);
   const [newsletterForm] = Form.useForm();
-
-
 
   useEffect(() => {
     async function fetchData() {
       const seasonUrl = `${Source_URL}constructors/${season}`;
       try {
         console.log("Fetching data from:", seasonUrl);
-  
+
         const response = await fetch(seasonUrl, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-  
+
         if (!response.ok) {
           console.log("No data found for this season. Initializing data...");
-          
+
           // Post request to insert initial data
           const initialDataUrl = `${Source_URL}initial-data`;
           const postResponse = await fetch(initialDataUrl, {
@@ -81,26 +79,26 @@ const Sidebar = () => {
             },
             body: JSON.stringify({ season }),
           });
-  
+
           if (!postResponse.ok) {
             console.error("Error initializing data:", postResponse.statusText);
             return;
           }
-  
+
           console.log("Data successfully initialized. Re-fetching data...");
-          
+
           // Re-fetch after posting initial data
           const refetchResponse = await fetch(seasonUrl, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
-  
+
           if (!refetchResponse.ok) {
             console.error("Error fetching data after initialization.");
             return;
           }
-          
+
           const data = await refetchResponse.json();
           console.log("Data fetched successfully after initialization:", data);
         } else {
@@ -111,10 +109,10 @@ const Sidebar = () => {
         console.error("Error fetching data:", error);
       }
     }
-  
+
     fetchData();
   }, [season]);
-  
+
   const handleConstructorChange = (event) => {
     setConstructor(event.target.value);
   };

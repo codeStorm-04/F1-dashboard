@@ -14,8 +14,8 @@ import {
   Tab,
 } from "@mui/material";
 import {
-  LineChart,
-  Line,
+  // LineChart,
+  // Line,
   BarChart,
   Bar,
   XAxis,
@@ -33,14 +33,13 @@ import { constructorsData, performanceData } from "../data/f1Data";
 import { useTheme } from "@mui/material/styles";
 import { useFilter } from "../context/FilterContext";
 
-
 const Statistics = () => {
   const theme = useTheme();
   const { season } = useFilter();
   const [driversData, setDriversData] = useState([]);
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  const Driver_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/drivers/${season}`;
   const token =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
 
@@ -68,11 +67,17 @@ const Statistics = () => {
 
   // Calculate driver statistics
   const driverStats = driversData.map((driver) => {
-    const totalPoints = driversData.reduce((sum, driver) => sum + driver.points, 0);
-    const totalDriverWins = driversData.reduce((sum, driver) => sum + driver.wins, 0);
+    const totalPoints = driversData.reduce(
+      (sum, driver) => sum + driver.points,
+      0
+    );
+    const totalDriverWins = driversData.reduce(
+      (sum, driver) => sum + driver.wins,
+      0
+    );
     const pointsProportion = ((driver.points / totalPoints) * 100).toFixed(2);
 
-    console.log("total driver wins",totalDriverWins  )
+    console.log("total driver wins", totalDriverWins);
     return {
       name: `${driver.driverId.name} ${driver.driverId.surname}`,
       points: driver.points,
@@ -159,7 +164,11 @@ const Statistics = () => {
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="points" fill="#E10600" name="Points" />
-                  <Bar dataKey="pointsProportion" fill="#00D2BE" name="Points Proportion (%)" />
+                  <Bar
+                    dataKey="pointsProportion"
+                    fill="#00D2BE"
+                    name="Points Proportion (%)"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </Paper>
@@ -185,7 +194,9 @@ const Statistics = () => {
                         <TableCell>{driver.name}</TableCell>
                         <TableCell align="right">{driver.points}</TableCell>
                         <TableCell align="right">{driver.winRate}%</TableCell>
-                        <TableCell align="right">{driver.pointsProportion}%</TableCell>
+                        <TableCell align="right">
+                          {driver.pointsProportion}%
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
