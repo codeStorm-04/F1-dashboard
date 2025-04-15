@@ -33,28 +33,41 @@ import { Modal, Form, Input, Checkbox, Space, Select, Button } from "antd";
 import { useFilter } from "../context/FilterContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { DRAWER_WIDTH, NAVBAR_HEIGHT } from "../constants/layout";
-import toast, { Toaster } from "react-hot-toast";
+// import toast, { Toaster } from "react-hot-toast";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import axios from "axios";
 import NewsletterForm from "./NewsletterForm";
 
-const API_URL = "https://f1-dashboard-k5b8.onrender.com/api/auth";
+const API_URL = "http://localhost:5000/api/auth";
 
-const Source_URL = "https://f1-dashboard-k5b8.onrender.com/api/f1/";
+const Source_URL = "http://localhost:5000/api/f1/";
 
 const Sidebar = () => {
   const { constructor, setConstructor, season, setSeason } = useFilter();
+  const [round, setRound] = useState("");
+  const [session, setSession] = useState("");
+  const [flashMessage, setFlashMessage] = useState({ type: "", message: "" });
+
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const [newsletterOpen, setNewsletterOpen] = useState(false);
-
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
   const [showNewsletterPreferences, setShowNewsletterPreferences] =
     useState(false);
   const [newsletterForm] = Form.useForm();
 
+  // Get token from localStorage
+  const token = localStorage.getItem("token");
+
   useEffect(() => {
+    // Check if user is authenticated
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     async function fetchData() {
       const seasonUrl = `${Source_URL}constructors/${season}`;
       try {
@@ -67,6 +80,12 @@ const Sidebar = () => {
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            // Token is invalid or expired
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+          }
           console.log("No data found for this season. Initializing data...");
 
           // Post request to insert initial data
@@ -81,6 +100,11 @@ const Sidebar = () => {
           });
 
           if (!postResponse.ok) {
+            if (postResponse.status === 401) {
+              localStorage.removeItem("token");
+              navigate("/login");
+              return;
+            }
             console.error("Error initializing data:", postResponse.statusText);
             return;
           }
@@ -95,6 +119,11 @@ const Sidebar = () => {
           });
 
           if (!refetchResponse.ok) {
+            if (refetchResponse.status === 401) {
+              localStorage.removeItem("token");
+              navigate("/login");
+              return;
+            }
             console.error("Error fetching data after initialization.");
             return;
           }
@@ -107,14 +136,45 @@ const Sidebar = () => {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
       }
     }
 
     fetchData();
-  }, [season]);
+  }, [season, token, navigate]);
 
   const handleConstructorChange = (event) => {
     setConstructor(event.target.value);
+  };
+  const handleViewSeason = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/f1/initial-data",
+        {
+          season,
+          round,
+          session,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.status === "success") {
+        toast.success("Session data inserted successfully!");
+      } else {
+        toast.warning("Partial success: some data may be missing.");
+      }
+    } catch (error) {
+      console.error("Error inserting session data:", error);
+      toast.error("Failed to insert session data.");
+    }
   };
 
   const handleSeasonChange = (event) => {
@@ -148,7 +208,7 @@ const Sidebar = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -166,6 +226,11 @@ const Sidebar = () => {
       }
     } catch (error) {
       console.error("Newsletter preferences error:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
       toast.error("Failed to save newsletter preferences", {
         duration: 4000,
         position: "top-center",
@@ -177,9 +242,40 @@ const Sidebar = () => {
     }
   };
 
-  const handleUnsubscribe = () => {
-    // Here you would typically handle the unsubscribe logic
-    console.log("Unsubscribe clicked");
+  const showFlashMessage = (type, message) => {
+    setFlashMessage({ type, message });
+    setTimeout(() => {
+      setFlashMessage({ type: "", message: "" });
+    }, 3000);
+  };
+
+  const handleUnsubscribe = async () => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/unsubscribe`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.status === "success") {
+        showFlashMessage(
+          "success",
+          "Successfully unsubscribed from newsletter!"
+        );
+      }
+    } catch (error) {
+      console.error("Unsubscribe error:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+      showFlashMessage("error", "Failed to unsubscribe from newsletter");
+    }
   };
 
   const menuItems = [
@@ -205,7 +301,35 @@ const Sidebar = () => {
 
   return (
     <>
-      <Toaster />
+      {flashMessage.message && (
+        <div
+          className={`alert alert-${flashMessage.type} alert-dismissible fade show`}
+          role="alert"
+          style={{
+            position: "fixed",
+            top: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            minWidth: "300px",
+            textAlign: "center",
+          }}
+        >
+          {flashMessage.message}
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setFlashMessage({ type: "", message: "" })}
+            style={{
+              position: "absolute",
+              right: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          ></button>
+        </div>
+      )}
+      <ToastContainer />
       <Drawer
         variant="permanent"
         sx={{
@@ -216,143 +340,189 @@ const Sidebar = () => {
             boxSizing: "border-box",
             bgcolor: "background.paper",
             mt: `${NAVBAR_HEIGHT}px`,
+            height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
+            overflowY: "auto",
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: theme.palette.mode === "dark" ? "#1a1a1a" : "#f1f1f1",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: theme.palette.mode === "dark" ? "#333" : "#888",
+              borderRadius: "4px",
+              "&:hover": {
+                background: theme.palette.mode === "dark" ? "#444" : "#666",
+              },
+            },
           },
         }}
       >
-        <Box sx={{ overflow: "auto", mt: 2 }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem
-                key={item.text}
-                disablePadding
-                component={Link}
-                to={item.path}
-                selected={location.pathname === item.path}
-              >
-                <ListItemButton
-                  // sx={{
-                  //   "&.Mui-selected": {
-                  //     bgcolor: "primary.main",
-                  //     "&:hover": {
-                  //       bgcolor: "primary.dark",
-                  //     },
-                  //     "& .MuiListItemIcon-root": {
-                  //       color: "white",
-                  //     },
-                  //     "& .MuiListItemText-root": {
-                  //       color: "white",
-                  //     },
-                  //   },
-                  // }}
-
-                  sx={{
-                    "&.Mui-selected": {
-                      // "& .MuiListItemText-primary": {
-                      //   color: "primary.main", // Change text color for active route
-                      // },
-                    },
-                    "&:hover": {
-                      "& .MuiListItemText-primary": {
-                        color: "inherit", // Darker text color on hover
-                      },
-                    },
-                  }}
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <Box sx={{ flex: 1 }}>
+            <List>
+              {menuItems.map((item) => (
+                <ListItem
+                  key={item.text}
+                  disablePadding
+                  component={Link}
+                  to={item.path}
                   selected={location.pathname === item.path}
                 >
-                  <ListItemIcon
+                  <ListItemButton
                     sx={{
-                      color:
-                        theme.palette.mode === "dark" ? "white" : "inherit",
+                      "&.Mui-selected": {
+                        "& .MuiListItemText-primary": {
+                          color: "primary.main",
+                        },
+                      },
+                      "&:hover": {
+                        "& .MuiListItemText-primary": {
+                          color: "inherit",
+                        },
+                      },
                     }}
+                    selected={location.pathname === item.path}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    sx={{
-                      color:
-                        theme.palette.mode === "dark" ? "white" : "inherit",
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
+                    <ListItemIcon
+                      sx={{
+                        color:
+                          theme.palette.mode === "dark" ? "white" : "inherit",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      sx={{
+                        color:
+                          theme.palette.mode === "dark" ? "white" : "inherit",
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+
+          <Divider />
+
+          <Box sx={{ p: 2 }}>
+            <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+              Filters
+            </Typography>
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="season-select-label">Season</InputLabel>
+              <MuiSelect
+                labelId="season-select-label"
+                id="season-select"
+                value={season}
+                label="Season"
+                onChange={handleSeasonChange}
+              >
+                {seasonOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </MuiSelect>
+            </FormControl>
+
+            {/* <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="constructor-select-label">Constructor</InputLabel>
+              <MuiSelect
+                labelId="constructor-select-label"
+                id="constructor-select"
+                value={constructor}
+                label="Constructor"
+                onChange={handleConstructorChange}
+              >
+                {constructorOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </MuiSelect>
+            </FormControl>
+           */}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="round-select-label">Round</InputLabel>
+              <MuiSelect
+                labelId="round-select-label"
+                id="round-select"
+                value={round}
+                label="Round"
+                onChange={(e) => setRound(e.target.value)}
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <MenuItem key={i + 1} value={(i + 1).toString()}>
+                    Round {i + 1}
+                  </MenuItem>
+                ))}
+              </MuiSelect>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="session-select-label">Session</InputLabel>
+              <MuiSelect
+                labelId="session-select-label"
+                id="session-select"
+                value={session}
+                label="Session"
+                onChange={(e) => setSession(e.target.value)}
+              >
+                {["fp1", "fp2", "fp3", "qualy", "race"].map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {s.toUpperCase()}
+                  </MenuItem>
+                ))}
+              </MuiSelect>
+            </FormControl>
+
+            <MuiButton
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={handleViewSeason}
+              disabled={!season || !round || !session}
+            >
+              View Session
+            </MuiButton>
+          </Box>
+
+          <Divider />
+
+          <List>
+            <ListItem>
+              <Typography variant="subtitle2" color="textSecondary">
+                Preferences
+              </Typography>
+            </ListItem>
+            <ListItem>
+              <MuiButton
+                fullWidth
+                variant="outlined"
+                color="primary"
+                startIcon={<EmailIcon />}
+                onClick={handleNewsletterOpen}
+              >
+                Newsletter
+              </MuiButton>
+            </ListItem>
+            <ListItem>
+              <MuiButton
+                fullWidth
+                variant="outlined"
+                color="error"
+                startIcon={<UnsubscribeIcon />}
+                onClick={handleUnsubscribe}
+              >
+                Unsubscribe
+              </MuiButton>
+            </ListItem>
           </List>
         </Box>
-
-        <Divider />
-
-        <Box sx={{ p: 2 }}>
-          <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-            Filters
-          </Typography>
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="season-select-label">Season</InputLabel>
-            <MuiSelect
-              labelId="season-select-label"
-              id="season-select"
-              value={season}
-              label="Season"
-              onChange={handleSeasonChange}
-            >
-              {seasonOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </MuiSelect>
-          </FormControl>
-
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="constructor-select-label">Constructor</InputLabel>
-            <MuiSelect
-              labelId="constructor-select-label"
-              id="constructor-select"
-              value={constructor}
-              label="Constructor"
-              onChange={handleConstructorChange}
-            >
-              {constructorOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </MuiSelect>
-          </FormControl>
-        </Box>
-
-        <Divider />
-
-        <List>
-          <ListItem>
-            <Typography variant="subtitle2" color="textSecondary">
-              Preferences
-            </Typography>
-          </ListItem>
-          <ListItem>
-            <MuiButton
-              fullWidth
-              variant="outlined"
-              color="primary"
-              startIcon={<EmailIcon />}
-              onClick={handleNewsletterOpen}
-            >
-              Newsletter
-            </MuiButton>
-          </ListItem>
-          <ListItem>
-            <MuiButton
-              fullWidth
-              variant="outlined"
-              color="error"
-              startIcon={<UnsubscribeIcon />}
-              onClick={handleUnsubscribe}
-            >
-              Unsubscribe
-            </MuiButton>
-          </ListItem>
-        </List>
       </Drawer>
 
       <NewsletterForm open={newsletterOpen} onClose={handleNewsletterClose} />

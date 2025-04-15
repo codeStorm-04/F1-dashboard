@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Newsletter = require("../models/Newsletter");
+const { sendMail } = require("../helpers/sendMail");
 
 const authController = {
   // Register a new user
@@ -182,6 +183,11 @@ const authController = {
         },
       };
       // console.log("Sending response:", JSON.stringify(response, null, 2));
+      // sendMail(
+      //   email,
+      //   "welcome to F1 Dashboard",
+      //   `Hi, tanu Thank you for coming back`
+      // );
       res.json(response);
     } catch (error) {
       console.error("Error during login:", error.message);
@@ -283,6 +289,49 @@ const authController = {
       res.status(500).json({
         status: "error",
         message: "Failed to update newsletter preferences",
+        error: error.message,
+      });
+    }
+  },
+
+  // Unsubscribe from newsletter
+  async unsubscribe(req, res) {
+    try {
+      const userId = req.user._id;
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
+      }
+
+      // Set newsletter to false and reset preferences
+      user.newsletter = false;
+      user.newsletterPreferences = {
+        f1News: false,
+        raceUpdates: false,
+        driverUpdates: false,
+        teamUpdates: false,
+      };
+
+      await user.save();
+      console.log(`User ${user.email} unsubscribed from newsletter`);
+
+      res.json({
+        status: "success",
+        message: "Successfully unsubscribed from newsletter",
+        data: {
+          newsletter: user.newsletter,
+          newsletterPreferences: user.newsletterPreferences,
+        },
+      });
+    } catch (error) {
+      console.error("Error unsubscribing from newsletter:", error.message);
+      res.status(500).json({
+        status: "error",
+        message: "Failed to unsubscribe from newsletter",
         error: error.message,
       });
     }

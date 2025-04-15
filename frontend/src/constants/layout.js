@@ -6,4 +6,4 @@
 
 export const DRAWER_WIDTH = 240;
 export const NAVBAR_HEIGHT = 64;
-export const CONTENT_MARGIN = 70;
+export const CONTENT_MARGIN = 50;

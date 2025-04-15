@@ -264,7 +264,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  // Chip,
+  Chip,
 } from "@mui/material";
 import axios from "axios";
 import { useFilter } from "../context/FilterContext";
@@ -273,11 +273,12 @@ const Teams = () => {
   const { season } = useFilter(); // Get season dynamically
   const [driversByConstructor, setDriversByConstructor] = useState({});
   const [teamStats, setTeamStats] = useState({});
-  const Driver_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/drivers/${season}`;
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
+  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  // const token =
+  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTdmMGUwOGUxYzZjOWM3MmY2N2UyYiIsImlhdCI6MTc0MzgyNzY1NywiZXhwIjoxNzQ0NDMyNDU3fQ.hLfv21NUzPLtYngqW8fVvfYuw7DZpQpQW80uT1jhaa0";
 
   // Fetch driver data with token
+  const token = localStorage.getItem("token");
   useEffect(() => {
     const fetchDriverData = async () => {
       try {
@@ -303,6 +304,7 @@ const Teams = () => {
             name: driver?.driverId?.name || "N/A",
             surname: driver?.driverId?.surname || "N/A",
             points: driver?.points || 0,
+            wins: driver?.wins || 0,
           });
 
           return acc;
@@ -318,12 +320,16 @@ const Teams = () => {
               (sum, driver) => sum + driver.points,
               0
             );
+            const totalWins = drivers.reduce(
+              (sum, driver) => sum + driver.wins,
+              0
+            );
 
             acc[teamName] = {
               name: teamName,
               // nationality: "Unknown", // You can fetch or hardcode this if available
               points: totalPoints,
-              wins: Math.floor(totalPoints / 25), // Assuming 25 points per win
+              wins: totalWins, // Assuming 25 points per win
               numDrivers: drivers.length,
               pointsPerWin: totalPoints / (Math.floor(totalPoints / 25) || 1),
             };
@@ -354,6 +360,7 @@ const Teams = () => {
           .filter((teamName) => driversByConstructor[teamName]?.length > 0) // Only show teams with drivers
           .map((teamName) => {
             const drivers = driversByConstructor[teamName];
+            const team = teamStats[teamName];
 
             return (
               <Grid item xs={12} md={6} lg={4} key={teamName}>
@@ -361,6 +368,35 @@ const Teams = () => {
                   <Typography variant="h6" gutterBottom>
                     {teamName}
                   </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    {/* <Chip
+                      label={teamName.nationality}
+                      size="small"
+                      sx={{ mr: 1 }}
+                    /> */}
+                    {/* <Chip
+                      label={`${teamName.wins} Wins`}
+                      color="primary"
+                      size="small"
+                      sx={{ mr: 1 }}
+                    />
+                    <Chip
+                      label={`${teamName.points} Points`}
+                      color="secondary"
+                      size="small"
+                    /> */}
+                    <Chip
+                      label={`${team?.wins ?? 0} Wins`}
+                      color="primary"
+                      size="small"
+                      sx={{ mr: 1 }}
+                    />
+                    <Chip
+                      label={`${team?.points ?? 0} Points`}
+                      color="secondary"
+                      size="small"
+                    />
+                  </Box>
 
                   {/* Team Drivers */}
                   <Typography variant="subtitle2" gutterBottom>

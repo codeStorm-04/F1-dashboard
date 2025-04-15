@@ -12,5 +12,6 @@ router.post(
   auth,
   authController.saveNewsletterPreferences
 );
+router.post("/unsubscribe", auth, authController.unsubscribe);
 
 module.exports = router;

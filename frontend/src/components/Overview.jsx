@@ -31,6 +31,8 @@ import { useTheme } from "@mui/material/styles";
 import QualifyingLapChart from "./QualifyingLapChart";
 import { constructorsData, performanceData } from "../data/f1Data";
 import { useFilter } from "../context/FilterContext";
+import Login from "./Login"; // import the login form
+import { useNavigate } from "react-router-dom";
 
 // Chart Colors
 const COLORS = [
@@ -43,19 +45,29 @@ const COLORS = [
 ];
 
 const Overview = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const { season } = useFilter();
   const [constructorData, setConstructorData] = useState([]);
   const [topWinsData, setTopWinsData] = useState([]);
   const [driverData, setDriverData] = useState([]);
+  const [authenticated, setAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
 
-  const API_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/constructors/${season}`;
-  const Driver_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/drivers/${season}`;
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
+  const API_URL = `http://localhost:5000/api/f1/constructors/${season}`;
+  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  // const token =
+  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTdmMGUwOGUxYzZjOWM3MmY2N2UyYiIsImlhdCI6MTc0MzgyNzY1NywiZXhwIjoxNzQ0NDMyNDU3fQ.hLfv21NUzPLtYngqW8fVvfYuw7DZpQpQW80uT1jhaa0";
 
   // Fetch constructor data
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const fetchConstructorData = async () => {
       try {
         const response = await axios.get(API_URL, {
@@ -113,6 +125,10 @@ const Overview = () => {
     fetchConstructorData();
     fetchDriverData();
   }, [season]);
+
+  if (!authenticated) {
+    return <Login onLoginSuccess={() => setAuthenticated(true)} />;
+  }
 
   return (
     <Box>
@@ -194,16 +210,38 @@ const Overview = () => {
                   data={topWinsData}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  outerRadius={120}
+                  labelLine={true}
+                  outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, value }) => `${name} (${value})`}
+                  label={({ name, value, cx, cy, midAngle, outerRadius }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 20; // Position outside the pie
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill={theme.palette.text.primary}
+                        textAnchor={x > cx ? "start" : "end"}
+                        dominantBaseline="central"
+                        style={{ fontSize: "12px" }}
+                      >
+                        <tspan x={x} dy="-0.6em">
+                          {name}
+                        </tspan>
+                        <tspan x={x} dy="1.2em">{`(${value} wins)`}</tspan>
+                      </text>
+                    );
+                  }}
                 >
                   {topWinsData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
+                      stroke="none"
                     />
                   ))}
                 </Pie>

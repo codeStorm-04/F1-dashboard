@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { UserOutlined, LogoutOutlined, MailOutlined } from "@ant-design/icons";
 import {
   Dropdown,
@@ -12,13 +12,16 @@ import {
 } from "antd";
 import { Box } from "@mui/material";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 // import { toast, ToastContainer } from "react-toastify";
 // import "react-toastify/dist/ReactToastify.css";
 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_URL = "https://f1-dashboard-k5b8.onrender.com/api/auth";
+const API_URL = "http://localhost:5000/api/auth";
 
 // Configure axios defaults
 axios.defaults.withCredentials = true; // Enable sending cookies
@@ -63,38 +66,23 @@ const UserAuth = () => {
   const [isSignupModalVisible, setIsSignupModalVisible] = useState(false);
   const [showNewsletterPreferences, setShowNewsletterPreferences] =
     useState(false);
+  const [flashMessage, setFlashMessage] = useState({ type: "", message: "" });
+  const navigate = useNavigate();
+  const { isLoggedIn, user, handleLogin, handleLogout } = useAuth();
+
   const [form] = Form.useForm();
   const [loginForm] = Form.useForm();
   const [signupForm] = Form.useForm();
   const [newsletterForm] = Form.useForm();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
 
-  // Check for existing token on component mount
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      console.log("Found existing token, fetching user data...");
-      setIsLoggedIn(true);
-      fetchUserData();
-    }
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      console.log("Fetching user data...");
-      const response = await axios.get(`${API_URL}/profile`);
-      console.log("User data response:", response.data);
-      if (response.data.status === "success") {
-        setUser(response.data.data.user);
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error.response || error);
-      handleLogout();
-    }
+  const showFlashMessage = (type, message) => {
+    setFlashMessage({ type, message });
+    setTimeout(() => {
+      setFlashMessage({ type: "", message: "" });
+    }, 3000);
   };
 
-  const handleLogin = async (values) => {
+  const handleLoginSubmit = async (values) => {
     try {
       console.log("Attempting login with values:", {
         ...values,
@@ -124,27 +112,10 @@ const UserAuth = () => {
 
       if (response.data.status === "success" && response.data.data?.token) {
         const { token, user } = response.data.data;
-
-        // Store token in localStorage
-        localStorage.setItem("token", token);
-        console.log("Token stored in localStorage");
-
-        // Update axios default headers
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        console.log("Updated axios headers:", axios.defaults.headers.common);
-
-        setUser(user);
-        setIsLoggedIn(true);
+        handleLogin(token, user);
         setIsLoginModalVisible(false);
         loginForm.resetFields();
-        toast.success("Successfully logged in! Welcome back!", {
-          duration: 3000,
-          position: "top-center",
-          style: {
-            background: "#4CAF50",
-            color: "#fff",
-          },
-        });
+        showFlashMessage("success", "Successfully logged in! Welcome back!");
       } else {
         console.error("Invalid response structure:", response.data);
         throw new Error(
@@ -158,17 +129,10 @@ const UserAuth = () => {
         status: error.response?.status,
       });
 
-      toast.error(
+      showFlashMessage(
+        "error",
         error.response?.data?.message ||
-          "Failed to login. Please check your credentials.",
-        {
-          duration: 4000,
-          position: "top-center",
-          style: {
-            background: "#f44336",
-            color: "#fff",
-          },
-        }
+          "Failed to login. Please check your credentials."
       );
 
       loginForm.setFields([
@@ -197,12 +161,7 @@ const UserAuth = () => {
 
       if (response.data.status === "success" && response.data.data?.token) {
         const { token, user } = response.data.data;
-        // Store token in localStorage
-        localStorage.setItem("token", token);
-        // Update axios default headers
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        setUser(user);
-        setIsLoggedIn(true);
+        handleLogin(token, user);
         setIsSignupModalVisible(false);
         signupForm.resetFields();
 
@@ -210,14 +169,10 @@ const UserAuth = () => {
         if (user.newsletter) {
           setShowNewsletterPreferences(true);
         } else {
-          toast.success("Successfully registered! Welcome to F1 Dashboard!", {
-            duration: 3000,
-            position: "top-center",
-            style: {
-              background: "#4CAF50",
-              color: "#fff",
-            },
-          });
+          showFlashMessage(
+            "success",
+            "Successfully registered! Welcome to F1 Dashboard!"
+          );
         }
       } else {
         throw new Error(
@@ -226,17 +181,9 @@ const UserAuth = () => {
       }
     } catch (error) {
       console.error("Signup error:", error.response || error);
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to register. Please try again.",
-        {
-          duration: 4000,
-          position: "top-center",
-          style: {
-            background: "#f44336",
-            color: "#fff",
-          },
-        }
+      showFlashMessage(
+        "error",
+        error.response?.data?.message || "Failed to register. Please try again."
       );
     }
   };
@@ -267,65 +214,21 @@ const UserAuth = () => {
 
       if (response.data.status === "success") {
         setShowNewsletterPreferences(false);
-        toast.success("Newsletter preferences saved successfully!", {
-          duration: 3000,
-          position: "top-center",
-          style: {
-            background: "#4CAF50",
-            color: "#fff",
-          },
-        });
+        showFlashMessage(
+          "success",
+          "Newsletter preferences saved successfully!"
+        );
       }
     } catch (error) {
       console.error("Newsletter preferences error:", error);
-      toast.error("Failed to save newsletter preferences", {
-        duration: 4000,
-        position: "top-center",
-        style: {
-          background: "#f44336",
-          color: "#fff",
-        },
-      });
+      showFlashMessage("error", "Failed to save newsletter preferences");
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      console.log("Logging out user...");
-      const token = localStorage.getItem("token");
-      if (token) {
-        await axios.post(`${API_URL}/logout`);
-      }
-      // Remove token from localStorage
-      localStorage.removeItem("token");
-      // Remove token from axios headers
-      delete axios.defaults.headers.common["Authorization"];
-      setUser(null);
-      setIsLoggedIn(false);
-      toast.success("Successfully logged out! See you next time!", {
-        duration: 3000,
-        position: "top-center",
-        style: {
-          background: "#4CAF50",
-          color: "#fff",
-        },
-      });
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Still clear local state even if server logout fails
-      localStorage.removeItem("token");
-      delete axios.defaults.headers.common["Authorization"];
-      setUser(null);
-      setIsLoggedIn(false);
-      toast.success("Successfully logged out! See you next time!", {
-        duration: 3000,
-        position: "top-center",
-        style: {
-          background: "#4CAF50",
-          color: "#fff",
-        },
-      });
-    }
+  const handleLogoutClick = async () => {
+    await handleLogout();
+    navigate("/");
+    showFlashMessage("success", "Successfully logged out! See you next time!");
   };
 
   const handleModalClose = (type) => {
@@ -349,7 +252,7 @@ const UserAuth = () => {
           key: "logout",
           label: "Logout",
           icon: <LogoutOutlined />,
-          onClick: handleLogout,
+          onClick: handleLogoutClick,
         },
       ]
     : [
@@ -367,7 +270,34 @@ const UserAuth = () => {
 
   return (
     <Box sx={{ ml: 2 }}>
-      <ToastContainer />
+      {flashMessage.message && (
+        <div
+          className={`alert alert-${flashMessage.type} alert-dismissible fade show`}
+          role="alert"
+          style={{
+            position: "fixed",
+            top: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            minWidth: "300px",
+            textAlign: "center",
+          }}
+        >
+          {flashMessage.message}
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setFlashMessage({ type: "", message: "" })}
+            style={{
+              position: "absolute",
+              right: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          ></button>
+        </div>
+      )}
       <Dropdown
         menu={{
           items,
@@ -491,7 +421,7 @@ const UserAuth = () => {
         onCancel={() => handleModalClose("login")}
         footer={null}
       >
-        <Form form={loginForm} onFinish={handleLogin} layout="vertical">
+        <Form form={loginForm} onFinish={handleLoginSubmit} layout="vertical">
           <Form.Item
             name="email"
             label="Email"

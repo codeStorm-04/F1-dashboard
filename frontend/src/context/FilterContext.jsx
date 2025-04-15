@@ -12,14 +12,25 @@ export const useFilter = () => {
 };
 
 export const FilterProvider = ({ children }) => {
-  const [constructor, setConstructor] = useState("all");
   const [season, setSeason] = useState("2024");
+  const [round, setRound] = useState("1");
+  const [session, setSession] = useState("fp1");
+  const [constructor, setConstructor] = useState("all");
 
   const value = {
+    // constructor,
+    // setConstructor,
+    // season,
+    // setSeason,
+
     constructor,
     setConstructor,
     season,
     setSeason,
+    round,
+    setRound,
+    session,
+    setSession,
   };
 
   return (

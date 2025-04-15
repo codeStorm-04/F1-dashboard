@@ -37,12 +37,12 @@ const Statistics = () => {
   const theme = useTheme();
   const { season } = useFilter();
   const [driversData, setDriversData] = useState([]);
+  const [constructorsData, setConstructorsData] = useState([]);
+
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const Driver_URL = `https://f1-dashboard-k5b8.onrender.com/api/f1/drivers/${season}`;
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZTZiNTEyMTMyNDk0ZTk2M2MyODU0ZCIsImlhdCI6MTc0MzE3Mjg4MiwiZXhwIjoxNzQzNzc3NjgyfQ.jfC9HL5MpjADgwp6qDxYbL8WkwoEsl6OQAFCLEFdJAw";
-
+  const Driver_URL = `http://localhost:5000/api/f1/drivers/${season}`;
+  const token = localStorage.getItem("token");
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
   };
@@ -63,6 +63,25 @@ const Statistics = () => {
     };
 
     fetchData();
+  }, [season]);
+
+  const Constructor_URL = `http://localhost:5000/api/f1/constructors/${season}`;
+
+  useEffect(() => {
+    const fetchConstructors = async () => {
+      try {
+        const response = await axios.get(Constructor_URL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setConstructorsData(response.data.data); // assumes backend returns { data: [...] }
+      } catch (error) {
+        console.error("Error fetching constructor data:", error);
+      }
+    };
+
+    fetchConstructors();
   }, [season]);
 
   // Calculate driver statistics
@@ -88,10 +107,24 @@ const Statistics = () => {
   });
 
   // Calculate constructor statistics
+  const totalConstructorWins = constructorsData.reduce(
+    (sum, c) => sum + c.wins,
+    0
+  );
+  const totalConstructorPoints = constructorsData.reduce(
+    (sum, c) => sum + c.points,
+    0
+  );
+
   const constructorStats = constructorsData.map((constructor) => ({
     ...constructor,
-    winRate: ((constructor.wins / 25.4) * 100).toFixed(1),
-    avgPoints: (constructor.points / 25.4).toFixed(1),
+    name: constructor.teamId.teamName,
+    winRate: totalConstructorWins
+      ? ((constructor.wins / totalConstructorWins) * 100).toFixed(2)
+      : "0.00",
+    avgPoints: totalConstructorPoints
+      ? ((constructor.points / totalConstructorPoints) * 100).toFixed(2)
+      : "0.00",
   }));
 
   return (

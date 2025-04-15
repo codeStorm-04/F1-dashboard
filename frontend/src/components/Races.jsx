@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import { constructorsData, driversData } from "../data/f1Data";
 import QualifyingLapChart from "./QualifyingLapChart";
+import axios from "axios";
 
 // Mock data for races (you can replace this with real data)
 const racesData = [
@@ -66,8 +67,43 @@ const racesData = [
   },
 ];
 
+const formatDateDDMMYYYY = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-GB"); // dd/mm/yyyy
+};
+
 const Races = () => {
   const [selectedTab, setSelectedTab] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
+
+  const [nextRace, setNextRace] = React.useState(null);
+
+  const fetchRace = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get(
+        "http://localhost:5000/api/f1/next-race",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const raceData = response.data?.race?.[0];
+
+      setNextRace(raceData);
+      console.log(response.data);
+    } catch (err) {
+      console.error("Failed to load race data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRace();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
@@ -149,40 +185,168 @@ const Races = () => {
           <Typography variant="h6" gutterBottom>
             Race Calendar
           </Typography>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Race</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Circuit</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {racesData.map((race) => (
-                  <TableRow key={race.id}>
-                    <TableCell>{race.name}</TableCell>
-                    <TableCell>
-                      {new Date(race.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{race.location}</TableCell>
-                    <TableCell>{race.circuit}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={race.status}
-                        color={
-                          race.status === "Completed" ? "success" : "default"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+
+          {nextRace && (
+            <Paper sx={{ p: 2, mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Next Upcoming Race
+              </Typography>
+
+              <TableContainer component={Paper} sx={{ mb: 3 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Session</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>FP1</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>FP2</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>FP3</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>Qualifying</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        <strong>Race</strong>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Date</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.fp1?.date
+                          ? formatDateDDMMYYYY(nextRace.schedule.fp1.date)
+                          : "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.fp2?.date
+                          ? formatDateDDMMYYYY(nextRace.schedule.fp2.date)
+                          : "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.fp3?.date
+                          ? formatDateDDMMYYYY(nextRace.schedule.fp3.date)
+                          : "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.qualy?.date
+                          ? formatDateDDMMYYYY(nextRace.schedule.qualy.date)
+                          : "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.race?.date
+                          ? formatDateDDMMYYYY(nextRace.schedule.race.date)
+                          : "TBD"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Time</strong>
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.fp1?.time || "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.fp2?.time || "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.fp3?.time || "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.qualy?.time || "TBD"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {nextRace.schedule?.race?.time || "TBD"}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Other Info Table */}
+              <TableContainer>
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Race</strong>
+                      </TableCell>
+                      <TableCell>{nextRace.raceName}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Round</strong>
+                      </TableCell>
+                      <TableCell>{nextRace.round}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Circuit</strong>
+                      </TableCell>
+                      <TableCell>
+                        {nextRace.circuit?.circuitName || "N/A"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Location</strong>
+                      </TableCell>
+                      <TableCell>
+                        {nextRace.circuit?.city || "Unknown"},{" "}
+                        {nextRace.circuit?.country || "Unknown"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Lap Record</strong>
+                      </TableCell>
+                      <TableCell>
+                        {nextRace.circuit?.lapRecord || "N/A"}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Laps</strong>
+                      </TableCell>
+                      <TableCell>{nextRace.laps || "TBD"}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Race Wiki</strong>
+                      </TableCell>
+                      <TableCell>
+                        <a href={nextRace.url} target="_blank" rel="noreferrer">
+                          {nextRace.url}
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Circuit Wiki</strong>
+                      </TableCell>
+                      <TableCell>
+                        <a
+                          href={nextRace.circuit?.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {nextRace.circuit?.url}
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          )}
         </Paper>
       )}
 
